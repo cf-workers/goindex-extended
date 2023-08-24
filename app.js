@@ -5870,7 +5870,7 @@ function append_files_to_list(path, files) {
     item.size = formatFileSize(item.size);
     if (item.mimeType == "application/vnd.google-apps.folder") {
       html += `<li class="mdui-list-item mdui-ripple"><a href="${p}" class="folder">
-	            <div class="mdui-col-xs-12 mdui-col-sm-7 mdui-text-truncate" title="${item.name}">
+	            <div class="mdui-col-xs-12 mdui-col-sm-7 mdui-text-truncate mdui-text-color-light-blue-a200" title="${item.name}">
 	            <i class="mdui-icon material-icons">folder_open</i>
 	              ${item.name}
 	            </div>
@@ -5902,6 +5902,22 @@ function append_files_to_list(path, files) {
         });
       }
       var ext = p.split(".").pop().toLowerCase();
+      let file_icon = 'insert_drive_file';
+      let file_color = '';
+      
+      if ("|mp4|webm|avi|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${ext}|`) >= 0) {
+        file_icon = 'play_circle_filled';
+        file_color = 'mdui-text-color-orange-a200';
+      }
+      if ("|html|php|css|go|java|js|ts|json|txt|sh|md|".indexOf(`|${ext}|`) >= 0) {
+        file_icon = 'code';
+        file_color = 'mdui-text-color-green-a200';
+      }
+      if ("|bmp|jpg|jpeg|png|gif|pdf|".indexOf(`|${ext}|`) >= 0) {
+        file_icon = 'photo';
+        file_color = 'mdui-text-color-yellow-a200';
+      }
+
       if (
         "|html|php|css|go|java|js|json|txt|sh|md|mp4|webm|avi|bmp|jpg|jpeg|png|gif|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|pdf|".indexOf(
           `|${ext}|`
@@ -5915,8 +5931,8 @@ function append_files_to_list(path, files) {
         item["size"] = "— — —";
       }
       html += `<li class="mdui-list-item file mdui-ripple" target="_blank"><a gd-type="${item.mimeType}" href="${p}" class="${c}">
-	          <div class="mdui-col-xs-12 mdui-col-sm-7 mdui-text-truncate" title="${item.name}">
-	          <i class="mdui-icon material-icons">insert_drive_file</i>
+	          <div class="mdui-col-xs-12 mdui-col-sm-7 mdui-text-truncate ${file_color}" title="${item.name}">
+	          <i class="mdui-icon material-icons">${file_icon}</i>
 	            ${item.name}
 	          </div>
 	          <div class="mdui-col-sm-3 mdui-text-right">${item["modifiedTime"]}</div>
