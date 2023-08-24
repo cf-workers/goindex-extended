@@ -5504,13 +5504,19 @@ if (UI.dark_mode) {
   );
 }
 document.write(
+  '<link href="https://fonts.googleapis.com/css?family=Baloo|Cabin+Condensed:700|Philosopher:700|Roboto+Condensed:700" rel="stylesheet">'
+);
+document.write(
   '<script src="//rawcdn.githack.com/cheems/goindex-extended/295ceaf2d64b2cb8578b21c0313d75b7bc8738a1/js/mdui.min.js"></script>'
 );
+// document.write(
+//   '<script src="//rawcdn.githack.com/cheems/goindex-extended/295ceaf2d64b2cb8578b21c0313d75b7bc8738a1/js/flv.min.js"></script>'
+// );
+// document.write(
+//   '<script src="//rawcdn.githack.com/cheems/goindex-extended/295ceaf2d64b2cb8578b21c0313d75b7bc8738a1/js/DPlayer.min.js"></script>'
+// );
 document.write(
-  '<script src="//rawcdn.githack.com/cheems/goindex-extended/295ceaf2d64b2cb8578b21c0313d75b7bc8738a1/js/flv.min.js"></script>'
-);
-document.write(
-  '<script src="//rawcdn.githack.com/cheems/goindex-extended/295ceaf2d64b2cb8578b21c0313d75b7bc8738a1/js/DPlayer.min.js"></script>'
+  '<script src="https://content.jwplatform.com/libraries/IDzF9Zmk.js" type="text/javascript"></script>'
 );
 document.write(
   '<script src="//cdn.jsdelivr.net/npm/marked@4.0.0/marked.min.js"></script>'
@@ -6244,6 +6250,9 @@ function copyToClipboard(str) {
 function file_video(path) {
   const url = window.location.origin + path;
   var file_name = decodeURIComponent(path.trim("/").split("/").slice(-1)[0].replaceAll("%5C%5C", "%5C"));
+  var file_name_without_ext = file_name.substring(0, file_name.lastIndexOf('.'));
+  console.log('Handle Video', url, file_name, file_name_without_ext);
+
   let player_items = [
     {
       text: "MXPlayer(Free)",
@@ -6271,8 +6280,8 @@ function file_video(path) {
       <ul class="mdui-menu" id="player-items">${player_items}</ul>`;
   const content = `
 <div class="mdui-container-fluid">
-	<br>
-	<div class="mdui-video-fluid mdui-center" id="dplayer"></div>
+  <br>
+	<div class="mdui-video-fluid mdui-center" id="video_container"></div>
 	<br>${playBtn}
 	<!-- ???? -->
   <div class="mdui-textfield">
@@ -6291,17 +6300,90 @@ function file_video(path) {
     copyToClipboard(url);
     mdui.snackbar("Copied to clipboard!");
   });
-  const dp = new DPlayer({
-    container: document.getElementById("dplayer"),
-    loop: false,
-    screenshot: true,
-    preload: "auto",
-    video: {
-      quality: [{ url: url, type: "normal" }],
-      autoplay: true,
-      defaultQuality: 0,
-    },
-  });
+
+  function listParentFolderCallback(res, path, prevReqParams) {
+    let rdata = res.data.files;
+    console.log('Debug List Files', rdata);
+    let tracks = [];
+    let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en'];
+    for (let i = 0; i < rdata.length; i++) {
+      let item = rdata[i];
+      let item_name = item.name;
+      let item_name_lower = item_name.toLowerCase();
+  
+      if (item_name_lower.endsWith('.srt') || item_name_lower.endsWith('.vtt')) {
+        if (item_name.includes(file_name_without_ext)) {
+          console.log('Subtitle Detected', item_name);
+          let item_label = item_name.replace(file_name_without_ext, '').replace('_', ' ').replace('-', ' ').trim();
+  
+          let prefer_track = false;
+          let item_name_check = item_name_lower.replace(' ', '_').replace('-', '_');
+          for (let j = 0; j < prefer_sub_languages.length; j++) {
+            if (item_name_check.includes(prefer_sub_languages[j])) {
+              prefer_track = true;
+              break;
+            }
+          }
+          if (prefer_track) {
+            tracks.unshift({
+              file: path + item_name,
+              label: item_label,
+              kind: "captions",
+              default: false
+            });
+          }
+          else {
+            tracks.push({
+              file: path + item_name,
+              label: item_label,
+              kind: "captions",
+              default: false
+            });
+          }
+        }
+      }
+    }
+  
+    if (tracks.length > 0) {
+      tracks[0].default = true;
+    }
+    console.log('Debug Tracks', tracks);
+  
+    var player = jwplayer("video_container");
+    player.setup({
+      "sources": [
+        {
+          "type": 'video/mp4',
+          "file": url
+        }
+      ],
+      tracks: tracks,
+      "width": "100%",
+      "autostart": "true",
+      "primary": "html5",
+      "playbackRateControls": true,
+      "preload": "none",
+      // cast: {"appid": "00000000"},
+      // "base": ".",
+      androidhls: true
+    });
+    let styleObject = {};
+    styleObject['color'] = '#FFFF00';
+    styleObject['fontOpacity'] = 100;
+    styleObject['fontSize'] = 18;
+    styleObject['backgroundColor'] = '#000000';
+    styleObject['backgroundOpacity'] = 0;
+    styleObject['fontFamily'] = 'Baloo';
+    styleObject['edgeStyle'] = 'uniform';
+    // styleObject['edgeStyle'] = 'dropshadow';
+    styleObject['windowColor'] = '#000000';
+    styleObject['windowOpacity'] = 0;
+    player.setCaptions(styleObject);
+  }
+  
+  var folder_path = path.substring(0, path.lastIndexOf('/') + 1)
+  requestListPath(folder_path, {}, listParentFolderCallback, null);
+  
 }
 function file_audio(path) {
   var url = window.location.origin + path;
