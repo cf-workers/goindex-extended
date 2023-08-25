@@ -5858,6 +5858,13 @@ function list(path) {
   );
 }
 function append_files_to_list(path, files) {
+  files = files.sort(function(a, b) {
+    return a.name.localeCompare(b.name, undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    });
+  });
+
   var $list = $("#list");
   var is_lastpage_loaded = null === $list.data("nextPageToken");
   var is_firstpage = "0" == $list.data("curPageIndex");
@@ -6331,6 +6338,15 @@ function file_video(path) {
 
   function listParentFolderCallback(res, path, prevReqParams) {
     let rdata = res.data.files;
+    // rdata.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    rdata = rdata.sort(function(a, b) {
+      return a.name.localeCompare(b.name, undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      });
+    });
+
+
     console.log('Debug List Files', rdata);
     let tracks = [];
     let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en'];
