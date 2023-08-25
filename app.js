@@ -5905,7 +5905,7 @@ function append_files_to_list(path, files) {
       let file_icon = 'insert_drive_file';
       let file_color = '';
       
-      if ("|mp4|webm|avi|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${ext}|`) >= 0) {
+      if ("|mp4|webm|avi|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|flv|".indexOf(`|${ext}|`) >= 0) {
         file_icon = 'play_circle_filled';
         file_color = 'mdui-text-color-orange-a200';
       }
@@ -6300,6 +6300,15 @@ function file_video(path) {
 	<div class="mdui-video-fluid mdui-center" id="video_container"></div>
 	<br>${playBtn}
 	<!-- ???? -->
+  <br><br>
+  <div class="mdui-row-xs-2">
+    <div class="mdui-col">
+      <a class="mdui-btn mdui-btn-block mdui-color-theme-accent mdui-ripple" id="previous_video" href="#">Previous</a>
+    </div>
+    <div class="mdui-col">
+      <a class="mdui-btn mdui-btn-block mdui-color-theme-accent mdui-ripple" id="next_video" href="#">Next</a>
+    </div>
+  </div>
   <div class="mdui-textfield">
 	  <label class="mdui-textfield-label">File Name</label>
 	  <input class="mdui-textfield-input" type="text" value="${file_name}"/>
@@ -6322,10 +6331,24 @@ function file_video(path) {
     console.log('Debug List Files', rdata);
     let tracks = [];
     let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en'];
+    let previous_video = '';
+    let next_video = '';
+    let last_video = '';
     for (let i = 0; i < rdata.length; i++) {
       let item = rdata[i];
       let item_name = item.name;
       let item_name_lower = item_name.toLowerCase();
+      if (item_name_lower.endsWith('.mp4') || item_name_lower.endsWith('.mkv')) {
+        if (item_name == file_name) {
+          console.log('Detect Previous Video', last_video, item_name);
+          previous_video = last_video;
+        }
+        if (last_video == file_name) {
+          console.log('Detect Next Video', last_video, item_name);
+          next_video = item_name;
+        }
+        last_video = item_name;
+      }
   
       if (item_name_lower.endsWith('.srt') || item_name_lower.endsWith('.vtt')) {
         if (item_name.includes(file_name_without_ext)) {
@@ -6395,6 +6418,24 @@ function file_video(path) {
     styleObject['windowColor'] = '#000000';
     styleObject['windowOpacity'] = 0;
     player.setCaptions(styleObject);
+
+    console.log(previous_video, next_video);
+    if (previous_video) {
+      $("#previous_video").text(previous_video);
+      $("#previous_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1) + previous_video + "?a=view")
+    }
+    else {
+      $("#previous_video").text("Back");
+      $("#previous_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1))
+    }
+    if (next_video) {
+      $("#next_video").text(next_video);
+      $("#next_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1) + next_video + "?a=view")
+    }
+    else {
+      $("#next_video").text("Back");
+      $("#next_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1))
+    }
   }
   
   var folder_path = path.substring(0, path.lastIndexOf('/') + 1)
