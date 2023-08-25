@@ -5578,7 +5578,8 @@ function init() {
 <div class="mdui-container">
 	<div class="mdui-container-fluid">
 		<div id="nav" class="mdui-toolbar nexmoe-item nav-style"> </div>
-    </div>
+    <div id="nav_breadcrumb" class="nexmoe-item nav-style"> </div>
+  </div>
 	<div class="mdui-container-fluid">
 		<div id="head_md" class="mdui-typo nexmoe-item" style="display:none;padding: 20px 0;"></div>
 		<div id="content" class="nexmoe-item"></div>
@@ -5674,6 +5675,7 @@ function title(path) {
 function nav(path) {
   var model = window.MODEL;
   var html = "";
+  var breadcrumb = `<a class="mdui-text-color-cyan-a100" href="/"><i class="mdui-icon material-icons mdui-icon-dark">home</i></a>`;
   var cur = window.current_drive_order || 0;
   var names = window.drive_names;
   html += `<select class="mdui-select" onchange="window.location.href=this.value" mdui-select style="overflow:visible;">`;
@@ -5696,7 +5698,7 @@ function nav(path) {
         if (n == "") {
           break;
         }
-        html += `<i class="mdui-icon material-icons mdui-icon-dark folder" style="margin:0;">chevron_right</i><a class="folder" style="background-color:transparent;max-width:230px" href="/${cur}:${p}">${n}</a>`;
+        breadcrumb += `<i class="mdui-icon material-icons mdui-icon-dark folder" style="margin:0;">chevron_right</i><a class="folder mdui-text-color-cyan-a100" style="background-color:transparent;max-width:230px" href="/${cur}:${p}">${n}</a>`;
       }
     }
   }
@@ -5721,6 +5723,7 @@ function nav(path) {
   html += search_bar;
   
   $("#nav").html(html);
+  $("#nav_breadcrumb").html(breadcrumb);
   mdui.mutation();
   mdui.updateTextFields();
 }
