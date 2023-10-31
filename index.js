@@ -37,10 +37,10 @@ const authConfig = {
     },
     {
       id: "drive_id",
-      name: "Personal Drive II",
-      // To enable password protection, uncomment the below line
-      // auth: {'username_1' : 'password_1', 'username_2' : 'password_2'},
-      protect_file_link: false
+    name: "Personal Drive II",
+    // To enable password protection, uncomment the below line
+    // auth: {'username_1' : 'password_1', 'username_2' : 'password_2'},
+    protect_file_link: false
     },
     // You can add more drives like above
     /*{
@@ -371,6 +371,20 @@ async function handleRequest(request) {
 
   let action = url.searchParams.get('a');
 
+  if (action != null) {
+    if (action == 'stream') {
+      if (path.split('/').pop().toLowerCase() == ".password") {
+        return basic_auth_res || new Response("", { status: 404 });
+      }
+      let file = await gd.file(path);
+      let range = request.headers.get('Range');
+      const inline_down = 'true' === url.searchParams.get('inline');
+      if (gd.root.protect_file_link && basic_auth_res) return basic_auth_res;
+      let itag = url.searchParams.get('i');
+      return gd.down_video(file.id, itag, range, inline_down);
+    }
+  }
+  
   if (path.substr(-1) == '/' || action != null) {
     return basic_auth_res || new Response(html(gd.order, { root_type: gd.root_type }), {
       status: 200,
@@ -440,6 +454,19 @@ async function handleId2Path(request, gd) {
   let form = await request.formData();
   let path = await gd.findPathById(decryptAES(form.get('id'), authConfig.crypt_secret));
   return new Response(path || '', option);
+}
+
+async function gatherResponse(response) {
+  const { headers } = response;
+  let cookies = [];
+  for (let pair of headers.entries()) {
+    if (pair[0] == 'set-cookie') {
+      cookies.push(pair[1].split(';')[0]);
+    }
+  }
+  return {
+    cookies: cookies.join('; ')
+  }
 }
 
 class googleDrive {
@@ -558,6 +585,45 @@ class googleDrive {
     this.authConfig.enable_cors_file_down && headers.append('Access-Control-Allow-Origin', '*');
     inline === true && headers.set('Content-Disposition', 'inline');
     return res;
+  }
+
+  async down_video(id, itag, range = '', inline = false) {
+    let url = `https://drive.google.com/e/get_video_info?docid=${id}`;
+    let requestOption = await this.requestOption();
+    let res = await fetch(url, requestOption);
+    const res_data = await gatherResponse(res);
+    let info_raw = await res.text();
+    let stream_data = new URLSearchParams(info_raw);
+    let fmt_stream_map = stream_data.get('fmt_stream_map');
+    let stream_map_data = fmt_stream_map.split(',');
+    let streams = {};
+    let stream_ls = [];
+    for (let i = 0; i < stream_map_data.length; i++) {
+      let item = stream_map_data[i].split('|');
+      if (item.length > 1) {
+        streams[item[0]] = item[1];
+        stream_ls.push(item[0]);
+      }
+    }
+    if (itag) {
+      let k = itag.toString();
+      if (streams[k]) {
+        let requestOption2 = { 'method': 'GET', 'headers': {} };
+        requestOption2.headers['Cookie'] = res_data.cookies;
+        if (range) {
+          requestOption2.headers['Range'] = range;
+          requestOption2.headers['Referer'] = streams[k];
+        }
+  
+        let r2 = await fetch(streams[k], requestOption2);
+        const { headers } = r2 = new Response(r2.body, r2);
+        this.authConfig.enable_cors_file_down && headers.append('Access-Control-Allow-Origin', '*');
+        inline === true && headers.set('Content-Disposition', 'inline');
+        return r2;
+      }
+    }
+  
+    return new Response(JSON.stringify(stream_ls));
   }
 
   async file(path) {
