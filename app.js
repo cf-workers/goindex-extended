@@ -6457,7 +6457,11 @@ function file_video(path) {
     console.log(previous_video, next_video);
     if (previous_video) {
       $("#previous_video").text(previous_video);
-      $("#previous_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1) + previous_video + "?a=view")
+      let previous_video_url = path.substring(0, path.lastIndexOf('/') + 1) + previous_video + "?a=view";
+      if (itag) {
+        previous_video_url = previous_video_url + `&i=${itag}`;
+      }
+      $("#previous_video").attr("href", previous_video_url)
     }
     else {
       $("#previous_video").text("Back");
@@ -6465,7 +6469,11 @@ function file_video(path) {
     }
     if (next_video) {
       $("#next_video").text(next_video);
-      $("#next_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1) + next_video + "?a=view")
+      let next_video_url = path.substring(0, path.lastIndexOf('/') + 1) + next_video + "?a=view";
+      if (itag) {
+        next_video_url = next_video_url + `&i=${itag}`;
+      }
+      $("#next_video").attr("href", next_video_url)
     }
     else {
       $("#next_video").text("Back");
@@ -6491,7 +6499,7 @@ function file_video(path) {
         if (itag == res[i]) {
           stream_css = 'mdui-color-purple-a200';
         }
-        let stream_url = `${path}?a=stream&i=${res[i]}`;
+        let stream_url = `${path}?a=view&i=${res[i]}`;
         let title = stream_title[res[i]];
         if (!title) {
           title = res[i];
