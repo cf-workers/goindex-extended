@@ -6276,6 +6276,7 @@ function copyToClipboard(str) {
 function file_video(path) {
   const url = window.location.origin + path;
   let dl_url = url;
+  let original_url = url + '?a=view';
 
   let current_url = new URL(window.location.href);
   let itag = current_url.searchParams.get('i');
@@ -6317,6 +6318,10 @@ function file_video(path) {
 <div class="mdui-container-fluid">
   <br>
 	<div class="mdui-video-fluid mdui-center" id="video_container"></div>
+  <br>
+  <div id="video_quality">
+    <a class="mdui-btn mdui-btn-dense mdui-color-cyan-700 mdui-ripple" href="${original_url}">Original</a>
+  </div>
 	<br>${playBtn}
 	<!-- ???? -->
   <br><br>
