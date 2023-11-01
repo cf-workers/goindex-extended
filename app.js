@@ -6277,12 +6277,14 @@ function file_video(path) {
   const url = window.location.origin + path;
   let dl_url = url;
   let original_url = url + '?a=view';
+  let original_url_css = 'mdui-color-cyan-700';
 
   let current_url = new URL(window.location.href);
   let itag = current_url.searchParams.get('i');
   if (itag) {
     current_url.searchParams.set('a', 'stream');
     dl_url = current_url.toString();
+    original_url_css = 'mdui-color-grey-600';
   }
 
   var file_name = decodeURIComponent(path.trim("/").split("/").slice(-1)[0].replaceAll("%5C%5C", "%5C"));
@@ -6320,7 +6322,7 @@ function file_video(path) {
 	<div class="mdui-video-fluid mdui-center" id="video_container"></div>
   <br>
   <div id="video_quality">
-    <a class="mdui-btn mdui-btn-dense mdui-color-cyan-700 mdui-ripple" href="${original_url}">Original</a>
+    <a class="mdui-btn mdui-btn-dense ${original_url_css} mdui-ripple" href="${original_url}">Original</a>
   </div>
 	<br>${playBtn}
 	<!-- ???? -->
@@ -6478,13 +6480,23 @@ function file_video(path) {
     $.get(`${path}?a=stream`, function (data) {
       let res = jQuery.parseJSON(data);
       console.log('Debug streams', res);
+      let stream_title = {
+        '18': '360p',
+        '22': '720p',
+        '37': '1080p'
+      }
       for (let i = 0; i < res.length; i++) {
         let video_streams = $('#video_quality').html();
         let stream_css = 'mdui-color-grey-600';
         if (itag == res[i]) {
           stream_css = 'mdui-color-purple-a200';
         }
-        $('#video_quality').html(video_streams + `\n<a class="mdui-btn mdui-btn-dense ${stream_css} mdui-ripple" href="#">${res[i]}</a>`);
+        let stream_url = `${path}?a=stream&i=${res[i]}`;
+        let title = stream_title[res[i]];
+        if (!title) {
+          title = res[i];
+        }
+        $('#video_quality').html(video_streams + `\n<a class="mdui-btn mdui-btn-dense ${stream_css} mdui-ripple" href="${stream_url}">${title}</a>`);
       }
     });
   }
