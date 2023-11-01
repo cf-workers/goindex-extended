@@ -6273,6 +6273,18 @@ function copyToClipboard(str) {
   document.execCommand("copy");
   $temp.remove();
 }
+function parse_episode(title) {
+  let name = title.toLowerCase();
+  let tv_re = /s(?<s>\d+)\s*\.*\-*e(?<e>\d+)/;
+  let r = name.match(tv_re);
+  if (r) {
+      return {
+          s: parseInt(r.groups.s),
+          e: parseInt(r.groups.e),
+      }
+  }
+  return null;
+}
 function file_video(path) {
   const url = window.location.origin + path;
   let dl_url = url;
@@ -6365,6 +6377,9 @@ function file_video(path) {
 
     console.log('Debug List Files', rdata);
     let tracks = [];
+    let subtitles = [];
+    let subtitles_2 = [];
+    let all_videos = [];
     let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en'];
     let previous_video = '';
     let next_video = '';
@@ -6374,6 +6389,7 @@ function file_video(path) {
       let item_name = item.name;
       let item_name_lower = item_name.toLowerCase();
       if (item_name_lower.endsWith('.mp4') || item_name_lower.endsWith('.mkv')) {
+        all_videos.push(item_name);
         if (item_name == file_name) {
           console.log('Detect Previous Video', last_video, item_name);
           previous_video = last_video;
@@ -6388,8 +6404,6 @@ function file_video(path) {
       if (item_name_lower.endsWith('.srt') || item_name_lower.endsWith('.vtt')) {
         if (item_name.includes(file_name_without_ext)) {
           console.log('Subtitle Detected', item_name);
-          let item_label = item_name.replace(file_name_without_ext, '').replace('_', ' ').replace('-', ' ').trim();
-  
           let prefer_track = false;
           let item_name_check = item_name_lower.replace(' ', '_').replace('-', '_');
           for (let j = 0; j < prefer_sub_languages.length; j++) {
@@ -6399,23 +6413,45 @@ function file_video(path) {
             }
           }
           if (prefer_track) {
-            tracks.unshift({
-              file: path + item_name,
-              label: item_label,
-              kind: "captions",
-              default: false
-            });
+            subtitles.unshift(item_name);
           }
           else {
-            tracks.push({
-              file: path + item_name,
-              label: item_label,
-              kind: "captions",
-              default: false
-            });
+            subtitles.push(item_name);
+          }
+        }
+        else {
+          subtitles_2.push(item_name);
+        }
+      }
+    }
+    if (all_videos.length == 1) {
+      // If current folder only has 1 video, includes all subtitles
+      subtitles = subtitles.concat(subtitles_2);
+    }
+    else {
+      // Matching episode subtitle
+      let episode_info = parse_episode(file_name);
+      if (episode_info) {
+        for (let j = 0; j < subtitles_2.length; j++) {
+          let sub_name = subtitles_2[j];
+          let sub_info = parse_episode(sub_name);
+          if (sub_info) {
+            if ((episode_info.s == sub_info.s) && (episode_info.e == sub_info.e)) {
+              subtitles.push(sub_name);
+            }
           }
         }
       }
+    }
+
+    for (let j = 0; j < subtitles.length; j++) {
+      let item_label = subtitles[j].replace(file_name_without_ext, '').replace('_', ' ').replace('-', ' ').replace('.', ' ').trim();
+      tracks.push({
+        file: path + subtitles[j],
+        label: item_label,
+        kind: "captions",
+        default: false
+      });
     }
   
     if (tracks.length > 0) {
