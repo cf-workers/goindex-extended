@@ -6473,7 +6473,27 @@ function file_video(path) {
   
   var folder_path = path.substring(0, path.lastIndexOf('/') + 1)
   requestListPath(folder_path, {}, listParentFolderCallback, null);
-  
+
+  function update_streams() {
+    $.get(`${path}?a=stream`, function (data) {
+      let res = jQuery.parseJSON(data);
+      console.log('Debug streams', res);
+      for (let i = 0; i < res.length; i++) {
+        let video_streams = $('#video_quality').html();
+        let stream_css = 'mdui-color-grey-600';
+        if (itag == res[i]) {
+          stream_css = 'mdui-color-purple-a200';
+        }
+        $('#video_quality').html(video_streams + `\n<a class="mdui-btn mdui-btn-dense ${stream_css} mdui-ripple" href="#">${res[i]}</a>`);
+      }
+    });
+  }
+  try {
+    update_streams();
+  }
+  catch (err) {
+  }
+
 }
 function file_audio(path) {
   var url = window.location.origin + path;
