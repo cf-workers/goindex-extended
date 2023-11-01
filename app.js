@@ -6275,6 +6275,15 @@ function copyToClipboard(str) {
 }
 function file_video(path) {
   const url = window.location.origin + path;
+  let dl_url = url;
+
+  let current_url = new URL(window.location.href);
+  let itag = current_url.searchParams.get('i');
+  if (itag) {
+    current_url.searchParams.set('a', 'stream');
+    dl_url = current_url.toString();
+  }
+
   var file_name = decodeURIComponent(path.trim("/").split("/").slice(-1)[0].replaceAll("%5C%5C", "%5C"));
   var file_name_without_ext = file_name.substring(0, file_name.lastIndexOf('.'));
   console.log('Handle Video', url, file_name, file_name_without_ext);
@@ -6325,10 +6334,10 @@ function file_video(path) {
   </div>
 	<div class="mdui-textfield">
 	  <label class="mdui-textfield-label">Download Link</label>
-	  <input class="mdui-textfield-input" type="text" value="${url}"/>
+	  <input class="mdui-textfield-input" type="text" value="${dl_url}"/>
 	</div>
 </div>
-<a href="${url}" class="mdui-fab mdui-fab-fixed mdui-ripple mdui-color-theme-accent"><i class="mdui-icon material-icons">file_download</i></a>
+<a href="${dl_url}" class="mdui-fab mdui-fab-fixed mdui-ripple mdui-color-theme-accent"><i class="mdui-icon material-icons">file_download</i></a>
 	`;
   $("#content").html(content);
   $("#copy-link").on("click", () => {
@@ -6412,7 +6421,7 @@ function file_video(path) {
       "sources": [
         {
           "type": 'video/mp4',
-          "file": url
+          "file": dl_url
         }
       ],
       tracks: tracks,
