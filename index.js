@@ -181,7 +181,7 @@ const CONSTS = new (class {
 
 // gd instances
 var gds = [];
-
+var ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
 function html(current_drive_order = 0, model = {}) {
   return `
 <!DOCTYPE html>
@@ -197,7 +197,8 @@ function html(current_drive_order = 0, model = {}) {
     window.current_drive_order = ${current_drive_order};
     window.UI = JSON.parse('${JSON.stringify(uiConfig)}');
   </script>
-  <script src="//rawcdn.githack.com/cf-workers/goindex-extended/144029aeff9ce8b69f88658a26c2338bab653018/app.js"></script>
+  <script src="//rawcdn.githack.com/cf-workers/goindex-extended/3059b19b684c988547543544653fe88f21e6b293/app.js"></script>
+  <!-- UA: ${ua} -->
 </head>
 <body>
 </body>
@@ -206,6 +207,10 @@ function html(current_drive_order = 0, model = {}) {
 };
 
 addEventListener('fetch', event => {
+  let current_ua = event.request.headers.get('user-agent');
+  if (current_ua) {
+    ua = current_ua;
+  }
   event.respondWith(handleRequest(event.request));
 });
 
@@ -608,7 +613,7 @@ class googleDrive {
     if (itag) {
       let k = itag.toString();
       if (streams[k]) {
-        let requestOption2 = { 'method': 'GET', 'headers': {} };
+        let requestOption2 = { 'method': 'GET', 'headers': {'user-agent': ua} };
         requestOption2.headers['Cookie'] = res_data.cookies;
         if (range) {
           requestOption2.headers['Range'] = range;
@@ -1275,6 +1280,7 @@ class googleDrive {
   async requestOption(headers = {}, method = 'GET') {
     const accessToken = await this.accessToken();
     headers['authorization'] = 'Bearer ' + accessToken;
+    headers['user-agent'] = ua
     return { 'method': method, 'headers': headers };
   }
 
