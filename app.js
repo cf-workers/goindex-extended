@@ -5869,15 +5869,16 @@ function is_video(name) {
 }
 function append_files_to_list(path, files) {
   files = files.sort(function(a, b) {
+    if ((a.mimeType == 'application/vnd.google-apps.folder') && (b.mimeType != 'application/vnd.google-apps.folder')) {
+      return -1;
+    }
     if (is_video(a.name) && (!is_video(b.name))) {
       return -1;
     }
-    else {
-      return a.name.localeCompare(b.name, undefined, {
-        numeric: true,
-        sensitivity: 'base'
-      });
-    }
+    return a.name.localeCompare(b.name, undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    });
   });
 
   var $list = $("#list");
