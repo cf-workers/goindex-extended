@@ -5870,16 +5870,20 @@ function is_video(name) {
 function append_files_to_list(path, files) {
   console.log('List Files #1', files);
   files = files.sort(function(a, b) {
+    return a.name.localeCompare(b.name, undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    });
+  });
+
+  files = files.sort(function (a, b) {
     if ((a.mimeType == 'application/vnd.google-apps.folder') && (b.mimeType != 'application/vnd.google-apps.folder')) {
       return -1;
     }
     if (is_video(a.name) && (!is_video(b.name))) {
       return -1;
     }
-    return a.name.localeCompare(b.name, undefined, {
-      numeric: true,
-      sensitivity: 'base'
-    });
+    return 0;
   });
   console.log(files);
 
