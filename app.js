@@ -5880,6 +5880,9 @@ function append_files_to_list(path, files) {
     if ((a.mimeType == 'application/vnd.google-apps.folder') && (b.mimeType != 'application/vnd.google-apps.folder')) {
       return -1;
     }
+    if ((a.mimeType != 'application/vnd.google-apps.folder') && (b.mimeType == 'application/vnd.google-apps.folder')) {
+      return 1;
+    }
     if (is_video(a.name) && (!is_video(b.name))) {
       return -1;
     }
