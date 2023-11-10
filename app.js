@@ -5929,7 +5929,7 @@ function append_files_to_list(path, files) {
       }
 
       if (
-        "|html|php|css|go|java|js|json|txt|sh|md|mp4|webm|avi|bmp|jpg|jpeg|png|gif|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|pdf|".indexOf(
+        "|html|php|css|go|java|js|json|txt|sh|md|mp4|m4v|webm|avi|bmp|jpg|jpeg|png|gif|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|pdf|".indexOf(
           `|${ext}|`
         ) >= 0
       ) {
@@ -6199,7 +6199,7 @@ function file(path) {
   if ("|html|php|css|go|java|js|json|txt|sh|md|".indexOf(`|${ext}|`) >= 0) {
     return file_code(path);
   }
-  if ("|mp4|webm|avi|".indexOf(`|${ext}|`) >= 0) {
+  if ("|mp4|m4v|webm|avi|".indexOf(`|${ext}|`) >= 0) {
     return file_video(path);
   }
   if ("|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${ext}|`) >= 0) {
