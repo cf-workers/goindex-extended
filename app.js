@@ -5857,12 +5857,27 @@ function list(path) {
     }
   );
 }
+function is_video(name) {
+  let name_lower = name.toLowerCase();
+  let valid_ext = ['.mp4', '.mkv', '.m4a'];
+  for (let i = 0; i < valid_ext.length; i++) {
+      if (name_lower.endsWith(valid_ext[i])) {
+          return 1;
+      }
+  }
+  return 0;
+}
 function append_files_to_list(path, files) {
   files = files.sort(function(a, b) {
-    return a.name.localeCompare(b.name, undefined, {
-      numeric: true,
-      sensitivity: 'base'
-    });
+    if (is_video(a.name) && (!is_video(b.name))) {
+      return -1;
+    }
+    else {
+      return a.name.localeCompare(b.name, undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      });
+    }
   });
 
   var $list = $("#list");
