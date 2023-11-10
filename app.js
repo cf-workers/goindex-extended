@@ -5871,7 +5871,7 @@ function append_files_to_list(path, files) {
   console.log(files);
   files = files.sort(function(a, b) {
     if ((a.mimeType == 'application/vnd.google-apps.folder') && (b.mimeType != 'application/vnd.google-apps.folder')) {
-      return -1;
+      return 1;
     }
     if (is_video(a.name) && (!is_video(b.name))) {
       return -1;
@@ -5881,6 +5881,7 @@ function append_files_to_list(path, files) {
       sensitivity: 'base'
     });
   });
+  console.log(files);
 
   var $list = $("#list");
   var is_lastpage_loaded = null === $list.data("nextPageToken");
