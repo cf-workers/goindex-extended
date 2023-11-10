@@ -5868,10 +5868,10 @@ function is_video(name) {
   return 0;
 }
 function append_files_to_list(path, files) {
-  console.log(files);
+  console.log('List Files #1', files);
   files = files.sort(function(a, b) {
     if ((a.mimeType == 'application/vnd.google-apps.folder') && (b.mimeType != 'application/vnd.google-apps.folder')) {
-      return 1;
+      return -1;
     }
     if (is_video(a.name) && (!is_video(b.name))) {
       return -1;
