@@ -1,5 +1,5 @@
 const authConfig = {
-  "siteName": "GoIndex Extended", // WebSite Name
+  "siteName": "GD", // WebSite Name
   "siteIcon": "https://raw.githubusercontent.com/cheems/goindex-extended/master/images/favicon-x.png", //or fevicon-x-light.png
   "version": "1.4.1", // VersionControl, do not modify manually
   // client_id & client_secret - PLEASE USE YOUR OWN!
@@ -53,7 +53,7 @@ const authConfig = {
   ],
   // =================== END OF ROOTS ===================  <-- DON'T REMOVE THIS LINE
   //Set this to true if you need to let users download files which Google Drive has flagged as a virus
-  "enable_virus_infected_file_down": false,
+  "enable_virus_infected_file_down": true,
   //Set this to true if you want to sort the list by modified time
   "sort_by_modified_time": false,
   //Set this to true if you need to let users download deleted files from the current drive
@@ -100,7 +100,7 @@ const uiConfig = {
   "hide_readme_md": false, // Set this to true if you need to disable rendering README.md
   "helpURL": "", // Provide the URL of the help page(instructions for using the index). Leave this empty if you want to hide the help icon. Providing a URL will open the help page in a new tab. (You can use telegra.ph to write instructions)
   "footer_text": "Made with <3", // Provide the footer text. Leave this empty if you want to hide it.
-  "credits": true, // Set this to true if you like to give credits. Otherwise you can set it to false. (NO BIG DEAL:3)
+  "credits": false, // Set this to true if you like to give credits. Otherwise you can set it to false. (NO BIG DEAL:3)
   "main_color": "blue-grey", // blue-grey | red | pink | purple | deep-purple | indigo | blue | light-blue | cyan | teal | green | light-green | lime | yellow | amber | orange | deep-orange | brown | grey
   "accent_color": "blue" // red | pink | purple | deep-purple | indigo | blue | light-blue | cyan | teal | green | light-green | lime | yellow | amber | orange | deep-orange
   // blue-grey and blue suit with both light and dark themes
@@ -403,7 +403,14 @@ async function handleRequest(request) {
     let range = request.headers.get('Range');
     const inline_down = 'true' === url.searchParams.get('inline');
     if (gd.root.protect_file_link && basic_auth_res) return basic_auth_res;
-    return gd.down(file.id, file.mimeType, range, inline_down);
+
+    let check_path = path.toLowerCase();
+    let force_text = false;
+    if (check_path.endsWith('.srt') || check_path.endsWith('.nfo') || check_path.endsWith('.txt')) {
+      force_text = true;
+    }
+
+    return gd.down(file.id, file.mimeType, range, inline_down, force_text);
   }
 }
 
@@ -566,7 +573,7 @@ class googleDrive {
     return _401;
   }
 
-  async down(id, mimeType, range = '', inline = false) {
+  async down(id, mimeType, range = '', inline = false, force_text = false) {
     let exportExtension = exportExtensions[mimeType];
     let exportMimeType = workspaceExportMimeTypes[exportExtension];
     let url;
@@ -588,7 +595,13 @@ class googleDrive {
     }
     const { headers } = res = new Response(res.body, res)
     this.authConfig.enable_cors_file_down && headers.append('Access-Control-Allow-Origin', '*');
-    inline === true && headers.set('Content-Disposition', 'inline');
+    if (force_text) {
+      headers.delete("Content-Disposition");
+      headers.set('Content-Type', 'text/plain; charset=utf-8');
+    }
+    else {
+      inline === true && headers.set('Content-Disposition', 'inline');
+    }
     return res;
   }
 
