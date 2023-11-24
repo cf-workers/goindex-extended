@@ -6310,6 +6310,16 @@ function parse_episode(title) {
   }
   return null;
 }
+function subtitle_click(e) {
+  update_cmd(e.getAttribute("data-url"));
+}
+function update_cmd(subtitle_url) {
+  let video_url = $("#dl_url").val();
+  let windows_cmd = `vlc.exe "${video_url}" --input-slave="${subtitle_url}"`
+  let macos_cmd = `open -a VLC --args '${video_url}' --input-slave='${subtitle_url}'`
+  $("#windows_cmd").val(windows_cmd);
+  $("#macos_cmd").val(macos_cmd);
+}
 function file_video(path) {
   const url = window.location.origin + path;
   let dl_url = url;
@@ -6364,6 +6374,7 @@ function file_video(path) {
 	<br>${playBtn}
 	<!-- ???? -->
   <br><br>
+  <div id="sub_list"></div>
   <div class="mdui-row-xs-2">
     <div class="mdui-col">
       <a class="mdui-btn mdui-btn-block mdui-color-theme-accent mdui-ripple" id="previous_video" href="#">Previous</a>
@@ -6373,12 +6384,20 @@ function file_video(path) {
     </div>
   </div>
   <div class="mdui-textfield">
+	  <label class="mdui-textfield-label">Windows Command</label>
+	  <input class="mdui-textfield-input" id="windows_cmd" type="text" value=""/>
+	</div>
+  <div class="mdui-textfield">
+	  <label class="mdui-textfield-label">macOS Command</label>
+	  <input class="mdui-textfield-input" id="macos_cmd" type="text" value=""/>
+	</div>
+  <div class="mdui-textfield">
 	  <label class="mdui-textfield-label">File Name</label>
 	  <input class="mdui-textfield-input" type="text" value="${file_name}"/>
   </div>
 	<div class="mdui-textfield">
 	  <label class="mdui-textfield-label">Download Link</label>
-	  <input class="mdui-textfield-input" type="text" value="${dl_url}"/>
+	  <input class="mdui-textfield-input" type="text" id="dl_url" value="${dl_url}"/>
 	</div>
 </div>
 <a href="${dl_url}" class="mdui-fab mdui-fab-fixed mdui-ripple mdui-color-theme-accent"><i class="mdui-icon material-icons">file_download</i></a>
@@ -6402,6 +6421,7 @@ function file_video(path) {
 
     console.log('Debug List Files', rdata);
     let tracks = [];
+    let sub_list_html = "";
     let subtitles = [];
     let subtitles_2 = [];
     let all_videos = [];
@@ -6477,6 +6497,29 @@ function file_video(path) {
         kind: "captions",
         default: false
       });
+      let item_url = '#';
+      let sub_url = window.location.origin + path + subtitles[j];
+      if (j == 0) {
+        update_cmd(sub_url)
+      }
+      if (Os.isIos) {
+        item_url = `vlc-x-callback://x-callback-url/stream?url=${dl_url}&sub=${sub_url}`
+      }
+      if (Os.isWindows) {
+        item_url = `vlcplus://${dl_url}!!!${sub_url}`
+      }
+      let sub_item_html = `
+        <div class="mdui-row" style="padding-bottom: 8px;">
+          <div class="mdui-col-xs-8">
+            <input class="mdui-textfield-input" type="text" value="${subtitles[j]}" data-url="${sub_url}" onclick="update_cmd(this)"/>
+          </div>
+          <div class="mdui-col-xs-4">
+            <a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="${item_url}"><i
+                class="mdui-icon material-icons">&#xe039;</i> VLC</a>
+          </div>
+        </div>
+      `;
+      sub_list_html += sub_item_html;
     }
   
     if (tracks.length > 0) {
@@ -6515,6 +6558,7 @@ function file_video(path) {
     styleObject['windowOpacity'] = 0;
     player.setCaptions(styleObject);
 
+    $("#sub_list").html(sub_list_html);
     console.log(previous_video, next_video);
     if (previous_video) {
       $("#previous_video").text(previous_video);
