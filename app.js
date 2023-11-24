@@ -6425,7 +6425,7 @@ function file_video(path) {
     let subtitles = [];
     let subtitles_2 = [];
     let all_videos = [];
-    let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en'];
+    let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en', '.vie.', '.eng.'];
     let previous_video = '';
     let next_video = '';
     let last_video = '';
@@ -6446,7 +6446,11 @@ function file_video(path) {
         last_video = item_name;
       }
   
-      if (item_name_lower.endsWith('.srt') || item_name_lower.endsWith('.vtt')) {
+      if (item_name_lower.endsWith('.srt') || 
+        item_name_lower.endsWith('.vtt') || 
+        item_name_lower.endsWith('.sup') || 
+        item_name_lower.endsWith('.mks') || 
+        item_name_lower.endsWith('.ass')) {
         if (item_name.includes(file_name_without_ext)) {
           console.log('Subtitle Detected', item_name);
           let prefer_track = false;
@@ -6491,12 +6495,14 @@ function file_video(path) {
 
     for (let j = 0; j < subtitles.length; j++) {
       let item_label = subtitles[j].replace(file_name_without_ext, '').replace('_', ' ').replace('-', ' ').replace('.', ' ').trim();
-      tracks.push({
-        file: path + subtitles[j],
-        label: item_label,
-        kind: "captions",
-        default: false
-      });
+      if (subtitles[j].toLowerCase().endsWith('.srt') || subtitles[j].toLowerCase().endsWith('.vtt')) {
+        tracks.push({
+          file: path + subtitles[j],
+          label: item_label,
+          kind: "captions",
+          default: false
+        });
+      }
       let item_url = '#';
       let sub_url = window.location.origin + path + subtitles[j];
       if (j == 0) {
