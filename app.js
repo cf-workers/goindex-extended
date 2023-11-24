@@ -6504,7 +6504,7 @@ function file_video(path) {
         });
       }
       let item_url = '#';
-      let sub_url = window.location.origin + path + subtitles[j];
+      let sub_url = window.location.origin + path + encodeURIComponent(subtitles[j]);
       if (j == 0) {
         update_cmd(sub_url)
       }
