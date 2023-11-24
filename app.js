@@ -6508,17 +6508,30 @@ function file_video(path) {
       if (Os.isWindows) {
         item_url = `vlcplus://${dl_url}!!!${sub_url}`
       }
-      let sub_item_html = `
-        <div class="mdui-row" style="padding-bottom: 8px;">
-          <div class="mdui-col-xs-8">
-            <input class="mdui-textfield-input" type="text" value="${subtitles[j]}" data-url="${sub_url}" onclick="update_cmd(this)"/>
+      let sub_item_html = '';
+      if (item_url == '#') {
+        sub_item_html = `
+          <div class="mdui-row" style="padding-bottom: 8px;">
+            <div class="mdui-col-xs-12">
+              <input class="mdui-textfield-input" type="text" readonly value="${subtitles[j]}" data-url="${sub_url}" onclick="subtitle_click(this)"/>
+            </div>
           </div>
-          <div class="mdui-col-xs-4">
-            <a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="${item_url}"><i
-                class="mdui-icon material-icons">&#xe039;</i> VLC</a>
+        `;
+      }
+      else {
+        sub_item_html = `
+          <div class="mdui-row" style="padding-bottom: 8px;">
+            <div class="mdui-col-xs-8">
+              <input class="mdui-textfield-input" type="text" readonly value="${subtitles[j]}" data-url="${sub_url}" onclick="subtitle_click(this)"/>
+            </div>
+            <div class="mdui-col-xs-4">
+              <a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="${item_url}"><i
+                  class="mdui-icon material-icons">&#xe039;</i> VLC</a>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
+      
       sub_list_html += sub_item_html;
     }
   
