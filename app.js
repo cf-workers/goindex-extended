@@ -6511,7 +6511,10 @@ function file_video(path) {
       if (Os.isIos) {
         item_url = `vlc-x-callback://x-callback-url/stream?url=${dl_url}&sub=${sub_url}`
       }
-      if (Os.isWindows) {
+      else if (Os.isMobile) {
+        
+      }
+      else {
         item_url = `vlcplus://${dl_url}!!!${sub_url}`
       }
       let sub_item_html = '';
