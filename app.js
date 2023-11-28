@@ -6348,7 +6348,7 @@ function file_video(path) {
       href: `intent:${url}#Intent;package=com.mxtech.videoplayer.pro;S.title=${path};end`,
     },
     { text: "nPlayer", href: `nplayer-${url}` },
-    { text: "VLC", href: `vlc://${url}` },
+    { text: "VLC", href: `vlcplus://${url}` },
     { text: "PotPlayer", href: `potplayer://${url}` },
   ]
     .map(
@@ -6512,7 +6512,7 @@ function file_video(path) {
         item_url = `vlc-x-callback://x-callback-url/stream?url=${dl_url}&sub=${sub_url}`
       }
       else if (Os.isMobile) {
-        
+
       }
       else {
         item_url = `vlcplus://${dl_url}!!!${sub_url}`
