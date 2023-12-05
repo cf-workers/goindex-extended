@@ -5965,6 +5965,12 @@ function append_files_to_list(path, files) {
       if (item["size"] === ""){
         item["size"] = "— — —";
       }
+      let openurl = p;
+      if ("|mp4|webm|avi|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|flv|".indexOf(`|${ext}|`) >= 0) {
+        if (Os.isIos) {
+          openurl = `vlc-x-callback://x-callback-url/stream?url=${window.location.origin}${ddl_link}`;
+        }
+      }
       html += `<li class="mdui-list-item file mdui-ripple" target="_blank"><a gd-type="${item.mimeType}" href="${p}" class="${c}">
 	          <div class="mdui-col-xs-12 mdui-col-sm-7 mdui-text-truncate ${file_color}" title="${item.name}">
 	          <i class="mdui-icon material-icons">${file_icon}</i>
@@ -5977,7 +5983,7 @@ function append_files_to_list(path, files) {
 	            <button onclick="window.open('${ddl_link}','_self')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
                 <i class="mdui-icon material-icons dummyclass">file_download</i>
               </button>
-              <button onclick="window.open('${p}','_blank')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
+              <button onclick="window.open('${openurl}','_blank')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
                 <i class="mdui-icon material-icons dummyclass">launch</i>
               </button>
               <button onclick="(function setClipboard(value) {var tempInput = document.createElement('input');tempInput.style = 'position: absolute; left: -1000px; top: -1000px';tempInput.value = value;document.body.appendChild(tempInput);tempInput.select();document.execCommand('copy');document.body.removeChild(tempInput);})(window.location.protocol + '//' + window.location.hostname + '${ddl_link}')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
@@ -6363,13 +6369,23 @@ function file_video(path) {
         <i class="mdui-icon material-icons">&#xe039;</i>Play In External Player<i class="mdui-icon material-icons">&#xe5cf;</i>
       </button>
       <ul class="mdui-menu" id="player-items">${player_items}</ul>`;
+  let video_quality_html = '';
+  if (Os.isIos) {
+    video_quality_html = `<a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="vlc-x-callback://x-callback-url/stream?url=${dl_url}"><i class="mdui-icon material-icons">&#xe039;</i> VLC</a>\n`;
+  }
+  else if (Os.isMobile) {
+
+  }
+  else {
+    video_quality_html = `<a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="vlcplus://${dl_url}"><i class="mdui-icon material-icons">&#xe039;</i> VLC</a>\n`;
+  }
   const content = `
 <div class="mdui-container-fluid">
   <br>
 	<div class="mdui-video-fluid mdui-center" id="video_container"></div>
   <br>
   <div id="video_quality">
-    <a class="mdui-btn mdui-btn-dense ${original_url_css} mdui-ripple" href="${original_url}">Original</a>
+    ${video_quality_html}<a class="mdui-btn mdui-btn-dense ${original_url_css} mdui-ripple" href="${original_url}">Original</a>
   </div>
 	<br>${playBtn}
 	<!-- ???? -->
