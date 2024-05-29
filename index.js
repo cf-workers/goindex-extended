@@ -1,5 +1,5 @@
 const authConfig = {
-  "siteName": "GoIndex Extended", // WebSite Name
+  "siteName": "GD", // WebSite Name
   "siteIcon": "https://raw.githubusercontent.com/cheems/goindex-extended/master/images/favicon-x.png", //or fevicon-x-light.png
   "version": "1.4.1", // VersionControl, do not modify manually
   // client_id & client_secret - PLEASE USE YOUR OWN!
@@ -37,10 +37,10 @@ const authConfig = {
     },
     {
       id: "drive_id",
-      name: "Personal Drive II",
-      // To enable password protection, uncomment the below line
-      // auth: {'username_1' : 'password_1', 'username_2' : 'password_2'},
-      protect_file_link: false
+    name: "Personal Drive II",
+    // To enable password protection, uncomment the below line
+    // auth: {'username_1' : 'password_1', 'username_2' : 'password_2'},
+    protect_file_link: false
     },
     // You can add more drives like above
     /*{
@@ -53,7 +53,7 @@ const authConfig = {
   ],
   // =================== END OF ROOTS ===================  <-- DON'T REMOVE THIS LINE
   //Set this to true if you need to let users download files which Google Drive has flagged as a virus
-  "enable_virus_infected_file_down": false,
+  "enable_virus_infected_file_down": true,
   //Set this to true if you want to sort the list by modified time
   "sort_by_modified_time": false,
   //Set this to true if you need to let users download deleted files from the current drive
@@ -100,7 +100,7 @@ const uiConfig = {
   "hide_readme_md": false, // Set this to true if you need to disable rendering README.md
   "helpURL": "", // Provide the URL of the help page(instructions for using the index). Leave this empty if you want to hide the help icon. Providing a URL will open the help page in a new tab. (You can use telegra.ph to write instructions)
   "footer_text": "Made with <3", // Provide the footer text. Leave this empty if you want to hide it.
-  "credits": true, // Set this to true if you like to give credits. Otherwise you can set it to false. (NO BIG DEAL:3)
+  "credits": false, // Set this to true if you like to give credits. Otherwise you can set it to false. (NO BIG DEAL:3)
   "main_color": "blue-grey", // blue-grey | red | pink | purple | deep-purple | indigo | blue | light-blue | cyan | teal | green | light-green | lime | yellow | amber | orange | deep-orange | brown | grey
   "accent_color": "blue" // red | pink | purple | deep-purple | indigo | blue | light-blue | cyan | teal | green | light-green | lime | yellow | amber | orange | deep-orange
   // blue-grey and blue suit with both light and dark themes
@@ -181,7 +181,7 @@ const CONSTS = new (class {
 
 // gd instances
 var gds = [];
-
+var ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
 function html(current_drive_order = 0, model = {}) {
   return `
 <!DOCTYPE html>
@@ -197,7 +197,8 @@ function html(current_drive_order = 0, model = {}) {
     window.current_drive_order = ${current_drive_order};
     window.UI = JSON.parse('${JSON.stringify(uiConfig)}');
   </script>
-  <script src="//rawcdn.githack.com/cf-workers/goindex-extended/144029aeff9ce8b69f88658a26c2338bab653018/app.js"></script>
+  <script src="//rawcdn.githack.com/cf-workers/goindex-extended/da3e2f1c3f4a0986fbf757617263f4d2fdc67079/app.js"></script>
+  <!-- UA: ${ua} -->
 </head>
 <body>
 </body>
@@ -206,6 +207,10 @@ function html(current_drive_order = 0, model = {}) {
 };
 
 addEventListener('fetch', event => {
+  let current_ua = event.request.headers.get('user-agent');
+  if (current_ua) {
+    ua = current_ua;
+  }
   event.respondWith(handleRequest(event.request));
 });
 
@@ -371,6 +376,20 @@ async function handleRequest(request) {
 
   let action = url.searchParams.get('a');
 
+  if (action != null) {
+    if (action == 'stream') {
+      if (path.split('/').pop().toLowerCase() == ".password") {
+        return basic_auth_res || new Response("", { status: 404 });
+      }
+      let file = await gd.file(path);
+      let range = request.headers.get('Range');
+      const inline_down = 'true' === url.searchParams.get('inline');
+      if (gd.root.protect_file_link && basic_auth_res) return basic_auth_res;
+      let itag = url.searchParams.get('i');
+      return gd.down_video(file.id, itag, range, inline_down);
+    }
+  }
+  
   if (path.substr(-1) == '/' || action != null) {
     return basic_auth_res || new Response(html(gd.order, { root_type: gd.root_type }), {
       status: 200,
@@ -384,7 +403,14 @@ async function handleRequest(request) {
     let range = request.headers.get('Range');
     const inline_down = 'true' === url.searchParams.get('inline');
     if (gd.root.protect_file_link && basic_auth_res) return basic_auth_res;
-    return gd.down(file.id, file.mimeType, range, inline_down);
+
+    let check_path = path.toLowerCase();
+    let force_text = false;
+    if (check_path.endsWith('.srt') || check_path.endsWith('.nfo') || check_path.endsWith('.txt')) {
+      force_text = true;
+    }
+
+    return gd.down(file.id, file.mimeType, range, inline_down, force_text);
   }
 }
 
@@ -440,6 +466,19 @@ async function handleId2Path(request, gd) {
   let form = await request.formData();
   let path = await gd.findPathById(decryptAES(form.get('id'), authConfig.crypt_secret));
   return new Response(path || '', option);
+}
+
+async function gatherResponse(response) {
+  const { headers } = response;
+  let cookies = [];
+  for (let pair of headers.entries()) {
+    if (pair[0] == 'set-cookie') {
+      cookies.push(pair[1].split(';')[0]);
+    }
+  }
+  return {
+    cookies: cookies.join('; ')
+  }
 }
 
 class googleDrive {
@@ -534,7 +573,7 @@ class googleDrive {
     return _401;
   }
 
-  async down(id, mimeType, range = '', inline = false) {
+  async down(id, mimeType, range = '', inline = false, force_text = false) {
     let exportExtension = exportExtensions[mimeType];
     let exportMimeType = workspaceExportMimeTypes[exportExtension];
     let url;
@@ -556,8 +595,53 @@ class googleDrive {
     }
     const { headers } = res = new Response(res.body, res)
     this.authConfig.enable_cors_file_down && headers.append('Access-Control-Allow-Origin', '*');
-    inline === true && headers.set('Content-Disposition', 'inline');
+    if (force_text) {
+      headers.delete("Content-Disposition");
+      headers.set('Content-Type', 'text/plain; charset=utf-8');
+    }
+    else {
+      inline === true && headers.set('Content-Disposition', 'inline');
+    }
     return res;
+  }
+
+  async down_video(id, itag, range = '', inline = false) {
+    let url = `https://drive.google.com/e/get_video_info?docid=${id}`;
+    let requestOption = await this.requestOption();
+    let res = await fetch(url, requestOption);
+    const res_data = await gatherResponse(res);
+    let info_raw = await res.text();
+    let stream_data = new URLSearchParams(info_raw);
+    let fmt_stream_map = stream_data.get('fmt_stream_map');
+    let stream_map_data = fmt_stream_map.split(',');
+    let streams = {};
+    let stream_ls = [];
+    for (let i = 0; i < stream_map_data.length; i++) {
+      let item = stream_map_data[i].split('|');
+      if (item.length > 1) {
+        streams[item[0]] = item[1];
+        stream_ls.push(item[0]);
+      }
+    }
+    if (itag) {
+      let k = itag.toString();
+      if (streams[k]) {
+        let requestOption2 = { 'method': 'GET', 'headers': {'user-agent': ua} };
+        requestOption2.headers['Cookie'] = res_data.cookies;
+        if (range) {
+          requestOption2.headers['Range'] = range;
+          requestOption2.headers['Referer'] = streams[k];
+        }
+  
+        let r2 = await fetch(streams[k], requestOption2);
+        const { headers } = r2 = new Response(r2.body, r2);
+        this.authConfig.enable_cors_file_down && headers.append('Access-Control-Allow-Origin', '*');
+        inline === true && headers.set('Content-Disposition', 'inline');
+        return r2;
+      }
+    }
+  
+    return new Response(JSON.stringify(stream_ls));
   }
 
   async file(path) {
@@ -1209,6 +1293,7 @@ class googleDrive {
   async requestOption(headers = {}, method = 'GET') {
     const accessToken = await this.accessToken();
     headers['authorization'] = 'Bearer ' + accessToken;
+    headers['user-agent'] = ua
     return { 'method': method, 'headers': headers };
   }
 

@@ -5857,13 +5857,38 @@ function list(path) {
     }
   );
 }
+function is_video(name) {
+  let name_lower = name.toLowerCase();
+  let valid_ext = ['.mp4', '.mkv', '.m4a'];
+  for (let i = 0; i < valid_ext.length; i++) {
+      if (name_lower.endsWith(valid_ext[i])) {
+          return 1;
+      }
+  }
+  return 0;
+}
 function append_files_to_list(path, files) {
+  console.log('List Files #1', files);
   files = files.sort(function(a, b) {
     return a.name.localeCompare(b.name, undefined, {
       numeric: true,
       sensitivity: 'base'
     });
   });
+
+  files = files.sort(function (a, b) {
+    if ((a.mimeType == 'application/vnd.google-apps.folder') && (b.mimeType != 'application/vnd.google-apps.folder')) {
+      return -1;
+    }
+    if ((a.mimeType != 'application/vnd.google-apps.folder') && (b.mimeType == 'application/vnd.google-apps.folder')) {
+      return 1;
+    }
+    if (is_video(a.name) && (!is_video(b.name))) {
+      return -1;
+    }
+    return 0;
+  });
+  console.log(files);
 
   var $list = $("#list");
   var is_lastpage_loaded = null === $list.data("nextPageToken");
@@ -5929,7 +5954,7 @@ function append_files_to_list(path, files) {
       }
 
       if (
-        "|html|php|css|go|java|js|json|txt|sh|md|mp4|webm|avi|bmp|jpg|jpeg|png|gif|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|pdf|".indexOf(
+        "|html|php|css|go|java|js|json|txt|sh|md|mp4|m4v|webm|avi|bmp|jpg|jpeg|png|gif|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|pdf|".indexOf(
           `|${ext}|`
         ) >= 0
       ) {
@@ -5939,6 +5964,12 @@ function append_files_to_list(path, files) {
       }
       if (item["size"] === ""){
         item["size"] = "— — —";
+      }
+      let openurl = p;
+      if ("|mp4|webm|avi|m4a|mp3|flac|wav|ogg|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|flv|".indexOf(`|${ext}|`) >= 0) {
+        if (Os.isIos) {
+          openurl = `vlc-x-callback://x-callback-url/stream?url=${window.location.origin}${ddl_link}`;
+        }
       }
       html += `<li class="mdui-list-item file mdui-ripple" target="_blank"><a gd-type="${item.mimeType}" href="${p}" class="${c}">
 	          <div class="mdui-col-xs-12 mdui-col-sm-7 mdui-text-truncate ${file_color}" title="${item.name}">
@@ -5952,7 +5983,7 @@ function append_files_to_list(path, files) {
 	            <button onclick="window.open('${ddl_link}','_self')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
                 <i class="mdui-icon material-icons dummyclass">file_download</i>
               </button>
-              <button onclick="window.open('${p}','_blank')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
+              <button onclick="window.open('${openurl}','_blank')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
                 <i class="mdui-icon material-icons dummyclass">launch</i>
               </button>
               <button onclick="(function setClipboard(value) {var tempInput = document.createElement('input');tempInput.style = 'position: absolute; left: -1000px; top: -1000px';tempInput.value = value;document.body.appendChild(tempInput);tempInput.select();document.execCommand('copy');document.body.removeChild(tempInput);})(window.location.protocol + '//' + window.location.hostname + '${ddl_link}')" class="mdui-textfield-icon mdui-btn mdui-btn-icon dummyclass" style="float: right;">
@@ -6199,7 +6230,7 @@ function file(path) {
   if ("|html|php|css|go|java|js|json|txt|sh|md|".indexOf(`|${ext}|`) >= 0) {
     return file_code(path);
   }
-  if ("|mp4|webm|avi|".indexOf(`|${ext}|`) >= 0) {
+  if ("|mp4|m4v|webm|avi|".indexOf(`|${ext}|`) >= 0) {
     return file_video(path);
   }
   if ("|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${ext}|`) >= 0) {
@@ -6273,8 +6304,42 @@ function copyToClipboard(str) {
   document.execCommand("copy");
   $temp.remove();
 }
+function parse_episode(title) {
+  let name = title.toLowerCase();
+  let tv_re = /s(?<s>\d+)\s*\.*\-*e(?<e>\d+)/;
+  let r = name.match(tv_re);
+  if (r) {
+      return {
+          s: parseInt(r.groups.s),
+          e: parseInt(r.groups.e),
+      }
+  }
+  return null;
+}
+function subtitle_click(e) {
+  update_cmd(e.getAttribute("data-url"));
+}
+function update_cmd(subtitle_url) {
+  let video_url = $("#dl_url").val();
+  let windows_cmd = `vlc.exe "${video_url}" --input-slave="${subtitle_url}"`
+  let macos_cmd = `open -a VLC --args '${video_url}' --input-slave='${subtitle_url}'`
+  $("#windows_cmd").val(windows_cmd);
+  $("#macos_cmd").val(macos_cmd);
+}
 function file_video(path) {
   const url = window.location.origin + path;
+  let dl_url = url;
+  let original_url = url + '?a=view';
+  let original_url_css = 'mdui-color-cyan-700';
+
+  let current_url = new URL(window.location.href);
+  let itag = current_url.searchParams.get('i');
+  if (itag) {
+    current_url.searchParams.set('a', 'stream');
+    dl_url = current_url.toString();
+    original_url_css = 'mdui-color-grey-600';
+  }
+
   var file_name = decodeURIComponent(path.trim("/").split("/").slice(-1)[0].replaceAll("%5C%5C", "%5C"));
   var file_name_without_ext = file_name.substring(0, file_name.lastIndexOf('.'));
   console.log('Handle Video', url, file_name, file_name_without_ext);
@@ -6289,7 +6354,7 @@ function file_video(path) {
       href: `intent:${url}#Intent;package=com.mxtech.videoplayer.pro;S.title=${path};end`,
     },
     { text: "nPlayer", href: `nplayer-${url}` },
-    { text: "VLC", href: `vlc://${url}` },
+    { text: "VLC", href: `vlcplus://${url}` },
     { text: "PotPlayer", href: `potplayer://${url}` },
   ]
     .map(
@@ -6304,13 +6369,28 @@ function file_video(path) {
         <i class="mdui-icon material-icons">&#xe039;</i>Play In External Player<i class="mdui-icon material-icons">&#xe5cf;</i>
       </button>
       <ul class="mdui-menu" id="player-items">${player_items}</ul>`;
+  let video_quality_html = '';
+  if (Os.isIos) {
+    video_quality_html = `<a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="vlc-x-callback://x-callback-url/stream?url=${dl_url}"><i class="mdui-icon material-icons">&#xe039;</i> VLC</a>\n`;
+  }
+  else if (Os.isMobile) {
+
+  }
+  else {
+    video_quality_html = `<a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="vlcplus://${dl_url}"><i class="mdui-icon material-icons">&#xe039;</i> VLC</a>\n`;
+  }
   const content = `
 <div class="mdui-container-fluid">
   <br>
 	<div class="mdui-video-fluid mdui-center" id="video_container"></div>
+  <br>
+  <div id="video_quality">
+    ${video_quality_html}<a class="mdui-btn mdui-btn-dense ${original_url_css} mdui-ripple" href="${original_url}">Original</a>
+  </div>
 	<br>${playBtn}
 	<!-- ???? -->
   <br><br>
+  <div id="sub_list"></div>
   <div class="mdui-row-xs-2">
     <div class="mdui-col">
       <a class="mdui-btn mdui-btn-block mdui-color-theme-accent mdui-ripple" id="previous_video" href="#">Previous</a>
@@ -6320,15 +6400,23 @@ function file_video(path) {
     </div>
   </div>
   <div class="mdui-textfield">
+	  <label class="mdui-textfield-label">Windows Command</label>
+	  <input class="mdui-textfield-input" id="windows_cmd" type="text" value=""/>
+	</div>
+  <div class="mdui-textfield">
+	  <label class="mdui-textfield-label">macOS Command</label>
+	  <input class="mdui-textfield-input" id="macos_cmd" type="text" value=""/>
+	</div>
+  <div class="mdui-textfield">
 	  <label class="mdui-textfield-label">File Name</label>
 	  <input class="mdui-textfield-input" type="text" value="${file_name}"/>
   </div>
 	<div class="mdui-textfield">
 	  <label class="mdui-textfield-label">Download Link</label>
-	  <input class="mdui-textfield-input" type="text" value="${url}"/>
+	  <input class="mdui-textfield-input" type="text" id="dl_url" value="${dl_url}"/>
 	</div>
 </div>
-<a href="${url}" class="mdui-fab mdui-fab-fixed mdui-ripple mdui-color-theme-accent"><i class="mdui-icon material-icons">file_download</i></a>
+<a href="${dl_url}" class="mdui-fab mdui-fab-fixed mdui-ripple mdui-color-theme-accent"><i class="mdui-icon material-icons">file_download</i></a>
 	`;
   $("#content").html(content);
   $("#copy-link").on("click", () => {
@@ -6349,7 +6437,11 @@ function file_video(path) {
 
     console.log('Debug List Files', rdata);
     let tracks = [];
-    let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en'];
+    let sub_list_html = "";
+    let subtitles = [];
+    let subtitles_2 = [];
+    let all_videos = [];
+    let prefer_sub_languages = ['vietnamese', 'english', '_vn', '_en', '.vie.', '.eng.'];
     let previous_video = '';
     let next_video = '';
     let last_video = '';
@@ -6358,6 +6450,7 @@ function file_video(path) {
       let item_name = item.name;
       let item_name_lower = item_name.toLowerCase();
       if (item_name_lower.endsWith('.mp4') || item_name_lower.endsWith('.mkv')) {
+        all_videos.push(item_name);
         if (item_name == file_name) {
           console.log('Detect Previous Video', last_video, item_name);
           previous_video = last_video;
@@ -6369,11 +6462,13 @@ function file_video(path) {
         last_video = item_name;
       }
   
-      if (item_name_lower.endsWith('.srt') || item_name_lower.endsWith('.vtt')) {
+      if (item_name_lower.endsWith('.srt') || 
+        item_name_lower.endsWith('.vtt') || 
+        item_name_lower.endsWith('.sup') || 
+        item_name_lower.endsWith('.mks') || 
+        item_name_lower.endsWith('.ass')) {
         if (item_name.includes(file_name_without_ext)) {
           console.log('Subtitle Detected', item_name);
-          let item_label = item_name.replace(file_name_without_ext, '').replace('_', ' ').replace('-', ' ').trim();
-  
           let prefer_track = false;
           let item_name_check = item_name_lower.replace(' ', '_').replace('-', '_');
           for (let j = 0; j < prefer_sub_languages.length; j++) {
@@ -6383,23 +6478,86 @@ function file_video(path) {
             }
           }
           if (prefer_track) {
-            tracks.unshift({
-              file: path + item_name,
-              label: item_label,
-              kind: "captions",
-              default: false
-            });
+            subtitles.unshift(item_name);
           }
           else {
-            tracks.push({
-              file: path + item_name,
-              label: item_label,
-              kind: "captions",
-              default: false
-            });
+            subtitles.push(item_name);
+          }
+        }
+        else {
+          subtitles_2.push(item_name);
+        }
+      }
+    }
+    if (all_videos.length == 1) {
+      // If current folder only has 1 video, includes all subtitles
+      subtitles = subtitles.concat(subtitles_2);
+    }
+    else {
+      // Matching episode subtitle
+      let episode_info = parse_episode(file_name);
+      if (episode_info) {
+        for (let j = 0; j < subtitles_2.length; j++) {
+          let sub_name = subtitles_2[j];
+          let sub_info = parse_episode(sub_name);
+          if (sub_info) {
+            if ((episode_info.s == sub_info.s) && (episode_info.e == sub_info.e)) {
+              subtitles.push(sub_name);
+            }
           }
         }
       }
+    }
+
+    for (let j = 0; j < subtitles.length; j++) {
+      let item_label = subtitles[j].replace(file_name_without_ext, '').replace('_', ' ').replace('-', ' ').replace('.', ' ').trim();
+      if (subtitles[j].toLowerCase().endsWith('.srt') || subtitles[j].toLowerCase().endsWith('.vtt')) {
+        tracks.push({
+          file: path + subtitles[j],
+          label: item_label,
+          kind: "captions",
+          default: false
+        });
+      }
+      let item_url = '#';
+      let sub_url = window.location.origin + path + encodeURIComponent(subtitles[j]);
+      if (j == 0) {
+        update_cmd(sub_url)
+      }
+      if (Os.isIos) {
+        item_url = `vlc-x-callback://x-callback-url/stream?url=${dl_url}&sub=${sub_url}`
+      }
+      else if (Os.isMobile) {
+
+      }
+      else {
+        item_url = `vlcplus://${dl_url}!!!${sub_url}`
+      }
+      let sub_item_html = '';
+      if (item_url == '#') {
+        sub_item_html = `
+          <div class="mdui-row" style="padding-bottom: 8px;">
+            <div class="mdui-col-xs-12">
+              <input class="mdui-textfield-input" type="text" readonly value="${subtitles[j]}" data-url="${sub_url}" onclick="subtitle_click(this)"/>
+            </div>
+          </div>
+        `;
+      }
+      else {
+        sub_item_html = `
+          <div class="mdui-row" style="padding-bottom: 8px;">
+            <div class="mdui-col-xs-8">
+              <input class="mdui-textfield-input" type="text" readonly value="${subtitles[j]}" data-url="${sub_url}" onclick="subtitle_click(this)"/>
+            </div>
+            <div class="mdui-col-xs-4">
+              <a class="mdui-btn mdui-btn-block mdui-color-purple-400 mdui-ripple" href="${item_url}"><i
+                  class="mdui-icon material-icons">&#xe039;</i> VLC</a>
+            </div>
+          </div>
+        `;
+      }
+      
+      sub_list_html += sub_item_html;
     }
   
     if (tracks.length > 0) {
@@ -6412,7 +6570,7 @@ function file_video(path) {
       "sources": [
         {
           "type": 'video/mp4',
-          "file": url
+          "file": dl_url
         }
       ],
       tracks: tracks,
@@ -6438,10 +6596,15 @@ function file_video(path) {
     styleObject['windowOpacity'] = 0;
     player.setCaptions(styleObject);
 
+    $("#sub_list").html(sub_list_html);
     console.log(previous_video, next_video);
     if (previous_video) {
       $("#previous_video").text(previous_video);
-      $("#previous_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1) + previous_video + "?a=view")
+      let previous_video_url = path.substring(0, path.lastIndexOf('/') + 1) + previous_video + "?a=view";
+      if (itag) {
+        previous_video_url = previous_video_url + `&i=${itag}`;
+      }
+      $("#previous_video").attr("href", previous_video_url)
     }
     else {
       $("#previous_video").text("Back");
@@ -6449,7 +6612,11 @@ function file_video(path) {
     }
     if (next_video) {
       $("#next_video").text(next_video);
-      $("#next_video").attr("href", path.substring(0, path.lastIndexOf('/') + 1) + next_video + "?a=view")
+      let next_video_url = path.substring(0, path.lastIndexOf('/') + 1) + next_video + "?a=view";
+      if (itag) {
+        next_video_url = next_video_url + `&i=${itag}`;
+      }
+      $("#next_video").attr("href", next_video_url)
     }
     else {
       $("#next_video").text("Back");
@@ -6459,7 +6626,37 @@ function file_video(path) {
   
   var folder_path = path.substring(0, path.lastIndexOf('/') + 1)
   requestListPath(folder_path, {}, listParentFolderCallback, null);
-  
+
+  function update_streams() {
+    $.get(`${path}?a=stream`, function (data) {
+      let res = jQuery.parseJSON(data);
+      console.log('Debug streams', res);
+      let stream_title = {
+        '18': '360p',
+        '22': '720p',
+        '37': '1080p'
+      }
+      for (let i = 0; i < res.length; i++) {
+        let video_streams = $('#video_quality').html();
+        let stream_css = 'mdui-color-grey-600';
+        if (itag == res[i]) {
+          stream_css = 'mdui-color-purple-a200';
+        }
+        let stream_url = `${path}?a=view&i=${res[i]}`;
+        let title = stream_title[res[i]];
+        if (!title) {
+          title = res[i];
+        }
+        $('#video_quality').html(video_streams + `\n<a class="mdui-btn mdui-btn-dense ${stream_css} mdui-ripple" href="${stream_url}">${title}</a>`);
+      }
+    });
+  }
+  try {
+    update_streams();
+  }
+  catch (err) {
+  }
+
 }
 function file_audio(path) {
   var url = window.location.origin + path;
