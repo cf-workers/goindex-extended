@@ -5583,6 +5583,7 @@ function init() {
 	<div class="mdui-container-fluid">
 		<div id="head_md" class="mdui-typo nexmoe-item" style="display:none;padding: 20px 0;"></div>
 		<div id="content" class="nexmoe-item"></div>
+    <div id="history" class="nexmoe-item"></div>
 	 	<div id="readme_md" class="mdui-typo nexmoe-item" style="display:none; padding: 20px 0;"></div>
   </div>
   <div class="mdui-center mdui-text-center mdui-text-color-blue-grey-5001" style="margin-bottom: 20px">${UI.footer_text}</div>
@@ -5839,6 +5840,46 @@ function list(path) {
     }
     if (window.scroll_status.loading_lock === !0) {
       window.scroll_status.loading_lock = !1;
+    }
+
+    if (res.history) {
+      $("#history").html(`
+        <div class="mdui-row">
+          <ul class="mdui-list">
+            <li class="mdui-list-item th">
+              <div class="mdui-col-xs-12 mdui-col-sm-12">
+                  History
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="mdui-row">
+          <ul id="historylist" class="mdui-list"></ul>
+          <div id="historycount"
+              class="mdui-hidden mdui-center mdui-text-center mdui-m-b-3 mdui-typo-subheading mdui-text-color-blue-grey-500">
+              Total <span class="number"></span> item(s)</div>
+        </div>`
+      );
+
+      let h_html = "";
+      for (h_index in res.history) {
+        let h_item = res.history[h_index];
+        let h_name = h_item.substring(h_item.lastIndexOf('/') + 1);
+        h_html += `
+          <li class="mdui-list-item file mdui-ripple" target="_blank">
+            <a gd-type="video/mp4" href="${h_item}?a=view" class="file view">
+              <div class="mdui-col-xs-12 mdui-col-sm-12 mdui-text-truncate mdui-text-color-orange-a200" title="${h_name}">
+                <i class="mdui-icon material-icons">play_circle_filled</i> ${h_name}
+              </div>
+            </a>
+          </li>
+        `;
+      }
+      $("#historylist").html(h_html);
+      $("#historycount")
+        .removeClass("mdui-hidden")
+        .find(".number")
+        .text($("#history").find("li.mdui-list-item").length);
     }
   }
   requestListPath(
