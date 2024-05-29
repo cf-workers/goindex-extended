@@ -6385,7 +6385,7 @@ function file_video(path) {
 	<div class="mdui-video-fluid mdui-center" id="video_container"></div>
   <br>
   <div id="video_quality">
-    ${video_quality_html}<a class="mdui-btn mdui-btn-dense ${original_url_css} mdui-ripple" href="${original_url}">Original</a>
+    ${video_quality_html}<br><a class="mdui-btn mdui-btn-dense ${original_url_css} mdui-ripple" href="${original_url}">Original</a>
   </div>
 	<br>${playBtn}
 	<!-- ???? -->
