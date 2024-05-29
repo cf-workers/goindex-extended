@@ -197,7 +197,7 @@ function html(current_drive_order = 0, model = {}) {
     window.current_drive_order = ${current_drive_order};
     window.UI = JSON.parse('${JSON.stringify(uiConfig)}');
   </script>
-  <script src="//rawcdn.githack.com/cf-workers/goindex-extended/da3e2f1c3f4a0986fbf757617263f4d2fdc67079/app.js"></script>
+  <script src="//rawcdn.githack.com/cf-workers/goindex-extended/d08bc5249d7752d515a3916faf70fae45b5dc003/app.js"></script>
   <!-- UA: ${ua} -->
 </head>
 <body>
@@ -388,6 +388,27 @@ async function handleRequest(request) {
       let itag = url.searchParams.get('i');
       return gd.down_video(file.id, itag, range, inline_down);
     }
+    else if (action == 'view') {
+      try {
+        let history = await GOINDEX.get('history', { type: "json" });
+        if (!history) history = [];
+        history.unshift(url.pathname);
+        console.log('history', JSON.stringify(history));
+        await GOINDEX.put('history', JSON.stringify([...new Set(history)]));
+        
+        // let folder_path = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
+        // let file_name = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
+        // let c_history_key = CryptoJS.MD5(folder_path).toString();
+        // let c_history = await GOINDEX.get(c_history_key, { type: "json" });
+        // if (!c_history) c_history = [];
+        // console.log(folder_path, file_name, c_history_key, c_history);
+        // c_history.unshift(file_name);
+        // await GOINDEX.put(c_history_key, JSON.stringify([...new Set(c_history)]));
+      }
+      catch(err) {
+       
+      }
+    }
   }
   
   if (path.substr(-1) == '/' || action != null) {
@@ -438,6 +459,16 @@ async function apiRequest(request, gd) {
     }
 
     let list_result = await deferred_list_result;
+    try {
+      if (path == '/') {
+        let history = await GOINDEX.get('history', { type: "json" });
+        if (!history) history = [];
+        list_result.history = history;
+      }
+    }
+    catch(err) {
+      
+    }
     return new Response(JSON.stringify(list_result), option);
   } else {
     let file = await gd.file(path);
