@@ -6417,7 +6417,7 @@ function file_video(path) {
       ],
       tracks: tracks,
       "width": "100%",
-      "autostart": "true",
+      "autostart": "false",
       "primary": "html5",
       "playbackRateControls": true,
       "preload": "none",
