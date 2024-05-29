@@ -5846,11 +5846,9 @@ function list(path) {
       $("#history").html(`
         <div class="mdui-row">
           <ul class="mdui-list">
-            <li class="mdui-list-item th">
-              <div class="mdui-col-xs-12 mdui-col-sm-12">
-                  History
-              </div>
-            </li>
+            <h2 class="mdui-text-color-cyan-a100" style="margin-top: 0; text-align: center;">
+              History
+            </h2>
           </ul>
         </div>
         <div class="mdui-row">
